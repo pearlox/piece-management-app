@@ -1,0 +1,245 @@
+﻿<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Piece Management</title>
+
+    <!-- Bootstrap -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  </head>
+
+  <body>
+    <!-- LOADER -->
+    <div id="loader" class="loader-wrapper" style="display: none">
+      <div class="spinner"></div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <!-- LOGIN -->
+    <div
+      id="loginPage"
+      class="d-flex vh-100 justify-content-center align-items-center bg-primary"
+    >
+      <div class="card p-4 shadow" style="width: 350px">
+        <h4 class="text-center">Login</h4>
+        <input id="email" class="form-control my-2" placeholder="Email" />
+        <input
+          id="password"
+          type="password"
+          class="form-control my-2"
+          placeholder="Password"
+        />
+        <button type="button" onclick="loginUser()" class="btn btn-dark w-100">
+          Login
+        </button>
+      </div>
+    </div>
+
+    <!-- APP -->
+    <div id="app" class="d-none">
+      <nav class="navbar bg-light px-3">
+        <h4>📊 Piece Management</h4>
+        <button type="button" onclick="logoutUser()" class="btn btn-danger">
+          Logout
+        </button>
+      </nav>
+
+      <div class="container mt-3">
+        <!-- Tabs -->
+        <ul class="nav nav-tabs mb-3">
+          <li class="nav-item">
+            <button
+              class="nav-link active"
+              onclick="showTab('dashboard')"
+              id="tab-dashboard"
+            >
+              Dashboard
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" onclick="showTab('entry')" id="tab-entry">
+              Entry
+            </button>
+          </li>
+          <li class="nav-item">
+            <button
+              class="nav-link"
+              onclick="showTab('report')"
+              id="tab-report"
+            >
+              Report
+            </button>
+          </li>
+        </ul>
+
+        <!-- ENTRY -->
+        <div id="entry" style="display: none">
+          <form onsubmit="saveEntry(event)">
+            <div class="row g-2">
+              <div class="col-md-6">
+                <input id="date" type="date" class="form-control" />
+              </div>
+              <div class="col-md-6">
+                <input
+                  id="company"
+                  class="form-control"
+                  placeholder="Company"
+                  required
+                />
+              </div>
+              <div class="col-md-6">
+                <input
+                  id="ents"
+                  class="form-control"
+                  placeholder="Ents"
+                  required
+                />
+              </div>
+              <div class="col-md-6">
+                <input
+                  id="gatePass"
+                  class="form-control"
+                  placeholder="Gate Pass"
+                />
+              </div>
+
+              <!-- TYPE -->
+              <div class="col-md-6">
+                <select id="type" class="form-select" onchange="toggleFields()">
+                  <option>Credit</option>
+                  <option>Debit</option>
+                </select>
+              </div>
+
+              <!-- WEIGHT -->
+              <div id="weightDiv" class="col-md-6">
+                <input id="weight" class="form-control" placeholder="Weight" />
+              </div>
+
+              <!-- DEBIT FIELDS -->
+              <div id="refDiv" class="col-md-6 d-none">
+                <select id="refGatePass" class="form-select" multiple></select>
+                <input
+                  id="balance"
+                  class="form-control mt-1"
+                  readonly
+                  placeholder="Balance"
+                />
+              </div>
+
+              <div class="col-md-6">
+                <input id="party" class="form-control" placeholder="Party" />
+              </div>
+
+              <div class="col-md-6">
+                <input
+                  id="pieces"
+                  type="number"
+                  class="form-control"
+                  placeholder="Pieces"
+                  required
+                />
+              </div>
+            </div>
+
+            <button class="btn btn-primary mt-3 w-100">Save</button>
+          </form>
+        </div>
+
+        <!-- DASHBOARD -->
+        <div id="dashboard">
+          <div id="companyCards" class="row mb-3"></div>
+          <table class="table table-bordered">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Company</th>
+                <th>Ents</th>
+                <th>GP</th>
+                <th>Type</th>
+                <th>Party</th>
+                <th>Pieces</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+
+        <!-- REPORT -->
+        <div id="report" style="display: none">
+          <div class="row mb-2">
+            <div class="col-md-2">
+              <select id="reportCompany" class="form-select"></select>
+            </div>
+
+            <div class="col-md-2">
+              <select id="reportEnts" class="form-select"></select>
+            </div>
+
+            <!-- ✅ NEW DATE FILTERS -->
+            <div class="col-md-2">
+              <input type="date" id="fromDate" class="form-control" />
+            </div>
+
+            <div class="col-md-2">
+              <input type="date" id="toDate" class="form-control" />
+            </div>
+
+            <div class="col-md-3 text-end">
+              <button
+                onclick="clearReportFilters()"
+                class="btn btn-secondary me-2"
+              >
+                Clear Filters
+              </button>
+
+              <button onclick="exportReport()" class="btn btn-success">
+                Export Excel
+              </button>
+            </div>
+          </div>
+
+          <div id="reportBody"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🔥 CONFIRM DELETE MODAL -->
+    <div class="modal fade" id="confirmModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Confirm Delete</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+
+          <div class="modal-body" id="confirmText">
+            Are you sure you want to delete this entry?
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn btn-secondary" data-bs-dismiss="modal">
+              Cancel
+            </button>
+            <button id="confirmDeleteBtn" class="btn-delete">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="./js/app.js"></script>
+  </body>
+</html>
