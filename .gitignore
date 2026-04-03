@@ -1,2 +1,9 @@
+# Environment variables
 .env
-./js/config.js
+
+# Firebase config (sensitive)
+js/config.js
+
+# Optional (good practice)
+node_modules/
+.DS_Store
